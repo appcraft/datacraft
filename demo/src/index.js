@@ -36,9 +36,23 @@ class DataTable extends PureComponent {
       // scrollToEnd: false
     }
 
+    this._cache = {}
+
     this._renderBodyCell = this._renderBodyCell.bind(this);
     this._renderHeaderCell = this._renderHeaderCell.bind(this);
     this._renderLeftSideCell = this._renderLeftSideCell.bind(this);
+  }
+  
+  handleAddColumn = () => {
+    const { fields, onAddColumn } = this.props
+    if (onAddColumn){
+      onAddColumn()
+      setTimeout(() => {
+        // this._rightGrid.recomputeGridSize({columnIndex: fields.length-2})
+        this._rightGrid.scrollToCell({columnIndex: fields.length+1})
+        this._rightGrid.recomputeGridSize()
+      }, 100)
+    }
   }
 
   handleAddRow = () => {
@@ -47,7 +61,7 @@ class DataTable extends PureComponent {
     if (onAddRow){
       onAddRow()
       setTimeout(() => {
-        this._rightGrid.scrollToCell({rowIndex: newRow, columnIndex: 0})
+        this._rightGrid.scrollToCell({rowIndex: newRow})
         // this.setState({ scrollToEnd: true })
         // console.log(this._rightGrid)
       }, 100)
@@ -99,11 +113,19 @@ class DataTable extends PureComponent {
     return selectedIds[data[rowIndex].email]
   }
   
-  _getColumnWidth = ({index}) => {
+  getColumnWidth = ({index}) => {
+    const { fields } = this.props
+
+    
+    if (index >= fields.length) console.log("getColumnWidth", index, 40)
+    else console.log("getColumnWidth", index, fields[index].width || 75)
+
+    if (index >= fields.length) return 40 // Add column
     return fields[index].width || 75
   }
   
   _computeLeftWidth = () => {
+    const { fields } = this.props
     let width = 0
     for(var field of fields){
       if (field.locked){
@@ -123,7 +145,19 @@ class DataTable extends PureComponent {
   //   return width
   // }
   
+  // computeColumnSize = () => {
+  //   const { fields, onAddColumn } = this.props
+  //   let count = fields.length
+  //   if (onAddColumn) count++
+  //   let width = 0
+  //   for(var index=0; index<count; index++) {
+  //     width += this.getColumnWidth({index})
+  //   }
+  //   return width
+  // }
+
   _computeFixedCount = () => {
+    const { fields } = this.props
     let cnt = 0
     for(var field of fields){
       if (field.locked){
@@ -137,20 +171,25 @@ class DataTable extends PureComponent {
 
   render(){
     const { height, fields,
-      overscanColumnCount=0,
+      overscanColumnCount=5,
       overscanRowCount=5 ,
       rowHeight=30,
       selectedIds,
       data,
+      onAddColumn,
     } = this.props
 
     const { scrollToEnd } = this.state
 
     
-    const columnCount = fields.length
+    let columnCount = fields.length
+    if (onAddColumn) columnCount++
     const rowCount = data.length + 1
 
     console.log("selectedIds", selectedIds)
+
+    // const estimatedColumnSize = this.computeColumnSize()
+    // console.log("estimatedColumnSize", estimatedColumnSize)
 
     return (
       <ScrollSync>
@@ -181,9 +220,10 @@ class DataTable extends PureComponent {
                 width={this._computeLeftWidth()}
                 height={rowHeight}
                 rowHeight={rowHeight}
-                columnWidth={this._getColumnWidth}
+                columnWidth={this.getColumnWidth}
                 rowCount={1}
                 columnCount={this._computeFixedCount()}
+                fields={fields}
                 selectedIds={selectedIds}
                 data={data}
               />
@@ -199,7 +239,7 @@ class DataTable extends PureComponent {
                 overscanColumnCount={overscanColumnCount}
                 overscanRowCount={overscanRowCount}
                 cellRenderer={this._renderLeftSideCell}
-                columnWidth={this._getColumnWidth}
+                columnWidth={this.getColumnWidth}
                 columnCount={this._computeFixedCount()}
                 className="LeftSideGrid"
                 height={height - scrollbarSize()}
@@ -207,6 +247,7 @@ class DataTable extends PureComponent {
                 rowCount={rowCount}
                 scrollTop={scrollTop}
                 width={this._computeLeftWidth()}
+                fields={fields}
                 selectedIds={selectedIds}
                 data={data}
               />
@@ -222,7 +263,7 @@ class DataTable extends PureComponent {
                       }}>
                       <Grid
                         className="HeaderGrid"
-                        columnWidth={this._getColumnWidth}
+                        columnWidth={this.getColumnWidth}
                         columnCount={columnCount}
                         height={rowHeight}
                         overscanColumnCount={overscanColumnCount}
@@ -230,6 +271,7 @@ class DataTable extends PureComponent {
                         rowHeight={rowHeight}
                         rowCount={1}
                         scrollLeft={scrollLeft}
+                        fields={fields}
                         width={width - scrollbarSize()}
                         selectedIds={selectedIds}
                         data={data}
@@ -243,7 +285,7 @@ class DataTable extends PureComponent {
                       <Grid
                         ref={el => this._rightGrid = el}
                         className="BodyGrid"
-                        columnWidth={this._getColumnWidth}
+                        columnWidth={this.getColumnWidth}
                         columnCount={columnCount}
                         height={height}
                         onScroll={onScroll}
@@ -254,6 +296,7 @@ class DataTable extends PureComponent {
                         rowHeight={rowHeight}
                         rowCount={rowCount}
                         width={width}
+                        fields={fields}
                         selectedIds={selectedIds}
                         data={data}
                       />
@@ -312,6 +355,13 @@ class DataTable extends PureComponent {
           )}
         </div>
       )
+    } else if (columnIndex === fields.length){
+      // Found add column !
+      return (
+        <div className="headerCell headerCell--add" key={key} style={style} onClick={this.handleAddColumn}>
+          <div>＋</div>
+        </div>
+      )
     }
     let className = "headerCell"
     if (columnIndex === this._computeFixedCount()-1){
@@ -327,9 +377,16 @@ class DataTable extends PureComponent {
 
   _renderLeftSideCell({columnIndex, key, rowIndex, style}) {
     const { fields, data, selectable } = this.props
-    const field = fields[columnIndex]
-
     let className = "cell"
+
+    if (columnIndex === fields.length){
+      // Found add column !
+      return (
+        <div className={className + " cell--add-column"} key={key} style={style} /> // Empty cell :p   
+      )
+    }
+
+    const field = fields[columnIndex]
     if (columnIndex === this._computeFixedCount()-1){
       className += " cell--right-separator"
     }
@@ -399,6 +456,14 @@ class Demo extends PureComponent {
       selectedIds: {}
     };
   }
+
+  handleAddColumn = () => {
+    const { fields } = this.state
+    console.log("add column !!")
+    this.setState({
+      fields: [...fields, {name: "Column " + (fields.length+1), width: 100, key: "column-" + (fields.length+1)}]
+    })
+  }
   
   _areAllSelected = () => {
     const { selectedIds } = this.state
@@ -464,6 +529,7 @@ class Demo extends PureComponent {
                    onAddRow={this._addRow}
                    onRowsSelected={this._toggleSelected}
                    onAllSelected={this._toggleAllSelected}
+                   onAddColumn={this.handleAddColumn}
                    selectedIds={selectedIds} />
       </div>
     );
