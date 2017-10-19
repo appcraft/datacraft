@@ -187,6 +187,8 @@ class DataTable extends PureComponent {
 
     const { scrollToEnd } = this.state
 
+
+    console.log("height", height)
     
     let columnCount = fields.length
     if (onAddColumn) columnCount++
@@ -248,7 +250,7 @@ class DataTable extends PureComponent {
                 columnWidth={this.getColumnWidth}
                 columnCount={this._computeFixedCount()}
                 className="LeftSideGrid"
-                height={height - scrollbarSize()}
+                height={height - rowHeight - scrollbarSize()}
                 rowHeight={rowHeight}
                 rowCount={rowCount}
                 scrollTop={scrollTop}
@@ -286,7 +288,7 @@ class DataTable extends PureComponent {
                     </div>
                     <div
                       style={{
-                        height,
+                        height: height - rowHeight - scrollbarSize(),
                         width,
                       }}>
                       <Grid
@@ -294,7 +296,7 @@ class DataTable extends PureComponent {
                         className="BodyGrid"
                         columnWidth={this.getColumnWidth}
                         columnCount={columnCount}
-                        height={height}
+                        height={height - rowHeight - scrollbarSize()}
                         onScroll={onScroll}
                         scrollTop={scrollTop}
                         overscanColumnCount={overscanColumnCount}
@@ -527,17 +529,24 @@ class Demo extends PureComponent {
     } = this.state;
 
     return (
-      <div>
-      <div style={{padding: 8}}>{data.length} profiles</div>
-        <DataTable height={500} 
-                   selectable={true}
-                   data={data}
-                   fields={fields}
-                   onAddRow={this._addRow}
-                   onRowsSelected={this._toggleSelected}
-                   onAllSelected={this._toggleAllSelected}
-                   onAddColumn={this.handleAddColumn}
-                   selectedIds={selectedIds} />
+      <div style={{padding: 8, height: '100%', display: 'flex', flexDirection: 'column'}}>
+        <div style={{padding: 8}}>{data.length} profiles</div>
+        <div style={{flex: '1 1 auto', display: 'flex', flexDirection: 'column'}}>
+          <AutoSizer disableWidth>
+            {({height}) => (
+                <DataTable 
+                  height={height} 
+                  selectable={true}
+                  data={data}
+                  fields={fields}
+                  onAddRow={this._addRow}
+                  onRowsSelected={this._toggleSelected}
+                  onAllSelected={this._toggleAllSelected}
+                  onAddColumn={this.handleAddColumn}
+                  selectedIds={selectedIds} />
+            )}
+          </AutoSizer>
+        </div>
       </div>
     );
   }
