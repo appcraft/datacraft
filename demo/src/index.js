@@ -42,6 +42,16 @@ class DataTable extends PureComponent {
     this._renderHeaderCell = this._renderHeaderCell.bind(this);
     this._renderLeftSideCell = this._renderLeftSideCell.bind(this);
   }
+
+  componentWillUpdate(nextProps, nextState) {
+    // Check for your update condition however you need to...
+    if (nextProps.fields !== this.props.fields) {
+      if (this._rightGrid && this._rightHeaderGrid) {
+        this._rightGrid.recomputeGridSize()
+        this._rightHeaderGrid.recomputeGridSize()
+      }
+    }
+  }
   
   handleAddColumn = () => {
     const { fields, onAddColumn } = this.props
@@ -50,7 +60,7 @@ class DataTable extends PureComponent {
       setTimeout(() => {
         // this._rightGrid.recomputeGridSize({columnIndex: fields.length-2})
         this._rightGrid.scrollToCell({columnIndex: fields.length+1})
-        this._rightGrid.recomputeGridSize()
+        // this._rightGrid.recomputeGridSize()
       }, 100)
     }
   }
@@ -116,11 +126,7 @@ class DataTable extends PureComponent {
   getColumnWidth = ({index}) => {
     const { fields } = this.props
 
-    
-    if (index >= fields.length) console.log("getColumnWidth", index, 40)
-    else console.log("getColumnWidth", index, fields[index].width || 75)
-
-    if (index >= fields.length) return 40 // Add column
+    if (index >= fields.length) return 60 // Add column
     return fields[index].width || 75
   }
   
@@ -172,7 +178,7 @@ class DataTable extends PureComponent {
   render(){
     const { height, fields,
       overscanColumnCount=5,
-      overscanRowCount=5 ,
+      overscanRowCount=10,
       rowHeight=30,
       selectedIds,
       data,
@@ -186,7 +192,7 @@ class DataTable extends PureComponent {
     if (onAddColumn) columnCount++
     const rowCount = data.length + 1
 
-    console.log("selectedIds", selectedIds)
+    // console.log("selectedIds", selectedIds)
 
     // const estimatedColumnSize = this.computeColumnSize()
     // console.log("estimatedColumnSize", estimatedColumnSize)
@@ -262,6 +268,7 @@ class DataTable extends PureComponent {
                         width: width - scrollbarSize(),
                       }}>
                       <Grid
+                        ref={el => this._rightHeaderGrid = el}
                         className="HeaderGrid"
                         columnWidth={this.getColumnWidth}
                         columnCount={columnCount}
