@@ -273,7 +273,7 @@ class DataTable extends PureComponent {
   }
 
   _renderLeftSideCell({columnIndex, key, rowIndex, style}) {
-    const { fields, data, onRowSelected, selectable } = this.props
+    const { fields, data, onRowSelected, selectable, onAddRow } = this.props
     const field = fields[columnIndex]
 
     let className = "cell"
@@ -285,7 +285,8 @@ class DataTable extends PureComponent {
       // + entry
       if (field.key === '_index'){
         return (
-          <div className={className + " cell--add"}  key={key} style={style}>
+          <div className={className + " cell--add"} key={key} style={style}
+               onClick={onAddRow}>
             <div className="cell__index">
             ＋
             </div>
@@ -293,7 +294,9 @@ class DataTable extends PureComponent {
         )
       } else {
         return (
-          <div className={className + " cell--empty"} key={key} style={style}></div>
+          <div className={className + " cell--empty"} 
+               onClick={onAddRow}
+               key={key} style={style}></div>
         )
       }
     }
@@ -325,7 +328,7 @@ class DataTable extends PureComponent {
     }
     return (
       <div className={cn(className, {"cell--selected": isSelected})} key={key} style={style}>
-        {`${data[rowIndex][field.key]}`}
+        {data[rowIndex][field.key]}
       </div>
     );
   }  
@@ -338,6 +341,7 @@ class Demo extends PureComponent {
 
     this.state = {
       fields: [...fields],
+      data: [...profiles],
       rowHeight: 30,
       selectedIds: {}
     };
@@ -376,20 +380,31 @@ class Demo extends PureComponent {
     })
   }
 
+  _addRow = () => {
+    this.setState({
+      data: [
+        ...this.state.data,
+        {}
+      ]
+    })
+  }
+
   render() {
     const {
       rowHeight,
       selectedIds,
       fields,
+      data
     } = this.state;
 
     return (
       <div>
-      <div style={{padding: 8}}>{profiles.length} profiles</div>
+      <div style={{padding: 8}}>{data.length} profiles</div>
         <DataTable height={500} 
                    selectable={true}
-                   data={profiles}
+                   data={data}
                    fields={fields}
+                   onAddRow={this._addRow}
                    onRowSelected={this._toggleSelected}
                    onAllSelected={this._toggleAllSelected}
                    selectedIds={selectedIds} />
