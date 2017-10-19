@@ -5,6 +5,7 @@ import { AutoSizer, Grid, ScrollSync }  from 'react-virtualized';
 import cn from 'classnames';
 import scrollbarSize from 'dom-helpers/util/scrollbarSize';
 
+import 'react-virtualized/styles.css';
 import './styles.css'
 
 import profiles from './mock'
@@ -30,9 +31,58 @@ class DataTable extends PureComponent {
   constructor(props, context) {
     super(props, context);
 
+    this.latestSelection = null
+    this.state = {
+      // scrollToEnd: false
+    }
+
     this._renderBodyCell = this._renderBodyCell.bind(this);
     this._renderHeaderCell = this._renderHeaderCell.bind(this);
     this._renderLeftSideCell = this._renderLeftSideCell.bind(this);
+  }
+
+  handleAddRow = () => {
+    const { data, onAddRow } = this.props
+    const newRow = data.length+1
+    if (onAddRow){
+      onAddRow()
+      setTimeout(() => {
+        this._rightGrid.scrollToCell({rowIndex: newRow, columnIndex: 0})
+        // this.setState({ scrollToEnd: true })
+        // console.log(this._rightGrid)
+      }, 100)
+    }
+  }
+
+  handleRowSelected = (e, rowIndex) => {
+    const { data, selectedIds, onRowsSelected } = this.props
+    if (onRowsSelected){
+      console.log(e.shiftKey, this.latestSelection)
+      if (e.shiftKey && this.latestSelection !== null){
+        // Multi row selection
+        console.log("shift !!!")
+        const rows = []
+        if (rowIndex < this.latestSelection){
+          for(var i=rowIndex; i<= this.latestSelection; i++) {
+            rows.push(i)
+          }
+        } else {
+          for(var i=this.latestSelection; i<=rowIndex; i++) {
+            rows.push(i)
+          }
+        }
+        this.latestSelection = rowIndex
+        onRowsSelected(rows, true) // Force on
+      } else { 
+        // Single row selection
+        if (this._isSelected({rowIndex})){
+          this.latestSelection = null
+        } else {
+          this.latestSelection = rowIndex
+        }
+        onRowsSelected([rowIndex], !selectedIds[data[rowIndex].email])
+      }
+    }
   }
   
   _areAllSelected = () => {
@@ -93,6 +143,8 @@ class DataTable extends PureComponent {
       selectedIds,
       data,
     } = this.props
+
+    const { scrollToEnd } = this.state
 
     
     const columnCount = fields.length
@@ -189,6 +241,7 @@ class DataTable extends PureComponent {
                         width,
                       }}>
                       <Grid
+                        ref={el => this._rightGrid = el}
                         className="BodyGrid"
                         columnWidth={this._getColumnWidth}
                         columnCount={columnCount}
@@ -273,7 +326,7 @@ class DataTable extends PureComponent {
   }
 
   _renderLeftSideCell({columnIndex, key, rowIndex, style}) {
-    const { fields, data, onRowSelected, selectable, onAddRow } = this.props
+    const { fields, data, selectable } = this.props
     const field = fields[columnIndex]
 
     let className = "cell"
@@ -286,7 +339,7 @@ class DataTable extends PureComponent {
       if (field.key === '_index'){
         return (
           <div className={className + " cell--add"} key={key} style={style}
-               onClick={onAddRow}>
+               onClick={this.handleAddRow}>
             <div className="cell__index">
             ＋
             </div>
@@ -295,7 +348,7 @@ class DataTable extends PureComponent {
       } else {
         return (
           <div className={className + " cell--empty"} 
-               onClick={onAddRow}
+               onClick={this.handleAddRow}
                key={key} style={style}></div>
         )
       }
@@ -312,7 +365,7 @@ class DataTable extends PureComponent {
           </div>
           {selectable && <div className="cell__checkbox">
             <label>
-              <input type="checkbox" checked={isSelected} onChange={e => onRowSelected(rowIndex)} />
+              <input type="checkbox" checked={isSelected} onClick={e => this.handleRowSelected(e, rowIndex)} />
             </label>
           </div>}
         </div>
@@ -369,15 +422,19 @@ class Demo extends PureComponent {
     }
   }
 
-  _toggleSelected = (rowIndex) => {
-    const { selectedIds } = this.state
-    const id = profiles[rowIndex].email
-    this.setState({
-      selectedIds: {
-        ...selectedIds,
-        [id]: !selectedIds[id]
+  _toggleSelected = (rows, checked) => {
+    const selectedIds = {...this.state.selectedIds}
+    console.log("toggle", rows, checked)
+    if (checked){
+      for(var row of rows){
+        selectedIds[profiles[row].email] = true
       }
-    })
+    } else {
+      for(var row of rows){
+        delete selectedIds[profiles[row].email]
+      }
+    }
+    this.setState({ selectedIds })
   }
 
   _addRow = () => {
@@ -405,7 +462,7 @@ class Demo extends PureComponent {
                    data={data}
                    fields={fields}
                    onAddRow={this._addRow}
-                   onRowSelected={this._toggleSelected}
+                   onRowsSelected={this._toggleSelected}
                    onAllSelected={this._toggleAllSelected}
                    selectedIds={selectedIds} />
       </div>
