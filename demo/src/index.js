@@ -118,7 +118,7 @@ class Demo extends PureComponent {
                   selectable={true}
                   data={data}
                   fields={fields}
-                  onAddRow={this._addRow}
+                  onAddRow={this.handleAddRow}
                   onRowsSelected={this._toggleSelected}
                   onAllSelected={this._toggleAllSelected}
                   onAddColumn={this.handleAddColumn}

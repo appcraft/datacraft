@@ -43,9 +43,15 @@ body>div {
 }
 
 .LeftSideGrid {
-  overflow: hidden !important;
+  overflow-x: hidden !important;
+  /* overflow: hidden !important; */
   outline:0;
+  -ms-overflow-style: none;
 }
+.LeftSideGrid::-webkit-scrollbar {
+  display: none;
+}
+
 .HeaderGrid {
   width: 100%;
   overflow: hidden !important;

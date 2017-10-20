@@ -107,6 +107,10 @@ class DataTable extends PureComponent {
     }
   }
   
+  handleMouseWheel = (e) => {
+    console.log("handleMouseWheel", e)
+  }
+
   _areAllSelected = () => {
     const { selectedIds, data } = this.props
     for(var line of data){
@@ -211,6 +215,8 @@ class DataTable extends PureComponent {
         const x = scrollLeft / (scrollWidth - clientWidth);
         const y = scrollTop / (scrollHeight - clientHeight);
 
+        console.log("scrollLeft", scrollLeft)
+
         const contentHeight = height - rowHeight
 
         return (
@@ -253,7 +259,12 @@ class DataTable extends PureComponent {
                 height={contentHeight - scrollbarSize()}
                 rowHeight={rowHeight}
                 rowCount={rowCount}
+                onScroll={e => {onScroll({ // Clone scroll event and only keep scrollTop
+                  clientHeight, clientWidth, scrollHeight, scrollWidth,
+                  scrollLeft, scrollTop: e.scrollTop
+                })}}
                 scrollTop={scrollTop}
+                onMouseWheel={this.handleMouseWheel}
                 width={this._computeLeftWidth()}
                 fields={fields}
                 selectedIds={selectedIds}
