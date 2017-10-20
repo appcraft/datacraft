@@ -24,6 +24,14 @@ class DataTable extends PureComponent {
     this._renderLeftSideCell = this._renderLeftSideCell.bind(this);
   }
 
+  componentDidMount(){
+    this._isMounted = true
+  }
+
+  componentWillUnmount(){
+    this._isMounted = false
+  }
+
   componentWillUpdate(nextProps, nextState) {
     // Check for your update condition however you need to...
     if (nextProps.fields !== this.props.fields) {
@@ -33,30 +41,39 @@ class DataTable extends PureComponent {
       }
     }
   }
+
+  // Safe unmount timeout implementation
+  setTimeout = (callback, timeout) => {
+    setTimeout(() => {
+      if (!this._isMounted) return
+      callback()
+    }, timeout)
+  }
+  
+  scrollToBottom = () => {
+    const { data } = this.props
+    if (this._rightGrid && data){
+      this._rightGrid.scrollToCell({rowIndex: data.length})
+    }
+  }
+  
+  scrollToRight = () => {
+    const { fields } = this.props
+    if (this._rightGrid && fields){
+      this._rightGrid.scrollToCell({columnIndex: fields.length})
+    }
+  }
   
   handleAddColumn = () => {
     const { fields, onAddColumn } = this.props
-    if (onAddColumn){
-      onAddColumn()
-      setTimeout(() => {
-        // this._rightGrid.recomputeGridSize({columnIndex: fields.length-2})
-        this._rightGrid.scrollToCell({columnIndex: fields.length+1})
-        // this._rightGrid.recomputeGridSize()
-      }, 100)
-    }
+    if (onAddColumn) onAddColumn()
+    // this._rightGrid.recomputeGridSize({columnIndex: fields.length-2})
   }
 
   handleAddRow = () => {
     const { data, onAddRow } = this.props
     const newRow = data.length+1
-    if (onAddRow){
-      onAddRow()
-      setTimeout(() => {
-        this._rightGrid.scrollToCell({rowIndex: newRow})
-        // this.setState({ scrollToEnd: true })
-        // console.log(this._rightGrid)
-      }, 100)
-    }
+    if (onAddRow) onAddRow()
   }
 
   handleRowSelected = (e, rowIndex) => {

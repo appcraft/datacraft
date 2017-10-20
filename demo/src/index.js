@@ -42,6 +42,8 @@ class Demo extends PureComponent {
     console.log("add column !!")
     this.setState({
       fields: [...fields, {name: "Column " + (fields.length+1), width: 100, key: "column-" + (fields.length+1)}]
+    }, () => {
+      if (this._dataTable) this._dataTable.scrollToRight()
     })
   }
   
@@ -82,12 +84,14 @@ class Demo extends PureComponent {
     this.setState({ selectedIds })
   }
 
-  _addRow = () => {
+  handleAddRow = () => {
     this.setState({
       data: [
         ...this.state.data,
         {}
       ]
+    }, () => {
+      if (this._dataTable) this._dataTable.scrollToBottom()
     })
   }
 
@@ -101,11 +105,15 @@ class Demo extends PureComponent {
 
     return (
       <div style={{padding: 8, height: '100%', display: 'flex', flexDirection: 'column'}}>
-        <div style={{padding: 8}}>{data.length} profiles</div>
+        <div style={{padding: 8}}>
+          <button onClick={this.handleAddRow} style={{float: 'right'}}>add user</button>
+          {data.length} profiles
+        </div>
         <div style={{flex: '1 1 auto', display: 'flex', flexDirection: 'column'}}>
           <AutoSizer disableWidth>
             {({height}) => (
                 <DataTable 
+                  ref={el => this._dataTable = el}
                   height={height} 
                   selectable={true}
                   data={data}
